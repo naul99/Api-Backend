@@ -20,6 +20,13 @@ class EpisodeModel extends BackendModel
             $result = DB::table('movies')->select('title','name_english','episode','server_id','linkphim')
                         ->rightJoin('episodes', 'movies.id', '=', 'episodes.movie_id')
                         ->where('movies.imdb', $params)->get();
+
+            $result = $result->map(function ($item) {
+                $parts = explode('link=', $item->linkphim);
+                $item->linkphim = $parts[1] ?? $item->linkphim;
+            
+                return $item;
+            });
                     
             return $result;
         }
