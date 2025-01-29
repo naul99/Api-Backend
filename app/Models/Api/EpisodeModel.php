@@ -18,30 +18,36 @@ class EpisodeModel extends BackendModel
         if ($options['task'] == 'get-item') {
             $result = null;
             $result = DB::table('movies')
-            ->select('movies.title', 'movies.name_english', 'episodes.episode', 'episodes.server_id', 'episodes.linkphim')
-            ->rightJoin('episodes', 'movies.id', '=', 'episodes.movie_id')
-            ->where('movies.imdb', $params)
-            ->get()
-            ->map(function ($item) {
-                $parts          = explode('link=', $item->linkphim);
-                $item->linkphim = $parts[1] ?? $item->linkphim;
-                return $item;
-            })
-            ->groupBy('title')
-            ->map(function ($items) {
-                return [
-                    'title'         => $items->first()->title,
-                    'name_english'  => $items->first()->name_english,
-                    'episodes'      => $items->map(function ($ep) {
+                        ->select('movies.title', 'movies.name_english', 'episodes.episode', 'episodes.server_id', 'episodes.linkphim')
+                        ->rightJoin('episodes', 'movies.id', '=', 'episodes.movie_id')
+                        ->where('movies.imdb', $params) 
+                        ->get(); 
+
+            if ($result->isNotEmpty()) {
+                $result = $result->map(function ($item) {
+                        $parts = explode('link=', $item->linkphim);
+                        $item->linkphim = $parts[1] ?? $item->linkphim;
+                        return $item;
+                    })
+                    ->groupBy('title') 
+                    ->map(function ($items) {
                         return [
-                            'episode'   => $ep->episode,
-                            'server_id' => $ep->server_id,
-                            'linkphim'  => $ep->linkphim
+                            'title' => $items->first()->title,
+                            'name_english' => $items->first()->name_english,
+                            'episodes' => $items->groupBy('server_id')->map(function ($serverItems, $server_id) {
+                                return [
+                                    'server_id' => $server_id,
+                                    'episode' => $serverItems->map(function ($serverItem) {
+                                        return [
+                                            'episode' => $serverItem->episode,
+                                            'linkphim' => $serverItem->linkphim
+                                        ];
+                                    })
+                                ];
+                            })->values()
                         ];
-                    })->values()
-                ];
-            })->values();
-        
+                    })->values()->first();
+            }
             return $result;
         }
     
