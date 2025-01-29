@@ -18,7 +18,7 @@ class EpisodeModel extends BackendModel
         if ($options['task'] == 'get-item') {
             $result = null;
             $result = DB::table('movies')
-                        ->select('movies.title', 'movies.name_english', 'episodes.episode', 'episodes.server_id', 'episodes.linkphim')
+                        ->select('movies.title', 'movies.name_english', 'movies.type_movie','episodes.episode', 'episodes.server_id', 'episodes.linkphim')
                         ->rightJoin('episodes', 'movies.id', '=', 'episodes.movie_id')
                         ->where('movies.imdb', $params) 
                         ->get(); 
@@ -34,6 +34,7 @@ class EpisodeModel extends BackendModel
                         return [
                             'title' => $items->first()->title,
                             'name_english' => $items->first()->name_english,
+                            'type' => $items->first()->type_movie,
                             'episodes' => $items->groupBy('server_id')->map(function ($serverItems, $server_id) {
                                 return [
                                     'server_id' => $server_id,
